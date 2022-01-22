@@ -10,7 +10,7 @@ const userRoutes = require('./routes/user');
 const app = express();
 
 // CONNEXION A LA BASE DE DONNEES
-db.sequelize.sync({alter: true});
+// db.sequelize.sync({alter: true});
 
 // https://sequelize.org/v7/manual/getting-started.html
 // Constructeur
@@ -88,8 +88,9 @@ dbConnectCheck();
   app.use('/images', express.static(path.join(__dirname, 'images')));
 
   // Routes
-  // app.use('/api/sauces', sauceRoutes);
   app.use('/api/auth', userRoutes);
+  // app.use('/api/post', postRoutes);
+ 
 
 // EXPORT
 module.exports = app;

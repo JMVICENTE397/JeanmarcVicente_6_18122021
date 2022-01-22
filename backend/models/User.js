@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       password: { type: DataTypes.STRING(255), allowNull: false }, // Hash
       lastName: { type: DataTypes.STRING(60), allowNull: false },
       firstName: { type: DataTypes.STRING(60), allowNull: false },
+      url: { type: DataTypes.STRING(255), allowNull: true },
       admin: { type: DataTypes.BOOLEAN, defaultValue:false },
       active: { type: DataTypes.BOOLEAN, defaultValue: true },
       // createdAt: { type: DataTypes.DATE },
@@ -30,6 +31,9 @@ module.exports = (sequelize, DataTypes) => {
 }
 
 // cf. https://codebysamgan.com/how-to-create-model-association-in-sequelize-express-js-node-js
+
+
+
 
 // // PLAN B
 // module.exports = (sequelize, DataTypes) => {
