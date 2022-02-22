@@ -1,44 +1,43 @@
 // IMPORTS
 require('dotenv').config();
 const bcrypt = require('bcrypt');
-// const maskData = require('maskdata');
 const joi = require('../middleware/joi');
-const models = require('../models');
+const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 
 // INSCRIPTION
 exports.signup = (req, res) => {
-  const userExist = models.User.findOne({
-    attributes: ['email'],
-    where: { email: req.body.email}
-  });
-  // On vérifie que l'email n'est pas déjà utilisé
-  if (!userExist){
-    const resultJoi = joi.validate(req.body);
-    console.log(req.body);
-    // On vérifie que les données saisies sont conformes
-    if (!resultJoi.error) {
-      bcrypt
-        .hash(req.body.password, 10)
-        .then((hash) => {
-          const user = models.User.create({
-            email: req.body.email,
-            password: hash,
-            lastName: req.body.lastName,
-            firstName: req.body.firstName
-          });
-          res.status(201).json({ user: user, message: 'Utilisateur créé' });
-        })
-        .catch((error) => {
-          res.status(500).json({ error, message: 'L\'encryptage a échoué' })
-        })
+  console.log('Inscription :', req.body)
+  User
+  .findOne({ where: { email: req.body.email} })
+  .then((user) => {
+    if (user) {
+      return res.status(401).json({ error: "Email déjà utilisé" })
     } else {
-      res.status(401).json({ error: resultJoi.error.details });
+      const resultJoi = joi.validate(req.body);
+      console.log(resultJoi);
+      if (!resultJoi.error) { // Si aucune erreur de format avec joi
+        bcrypt
+          .hash(req.body.password, 10)
+          .then((hash) => {
+            User.create({
+              email: req.body.email,
+              lastName: req.body.lastName,
+              firstName: req.body.firstName,
+              password: hash,
+            });
+            res.status(201).json({ user: user, message: 'Utilisateur créé.' });
+          })
+          .catch((error) => {
+            res.status(500).json({ error, message: 'Erreur de cryptage.' })
+          })
+      } else {
+        return res.status(401).json({ error: "Saisie non valide." })
+      }
     }
-  } else {
-    res.status(401).json({ message: 'Email déjà utilisé'});
-  }
+  })
+  .catch(error => res.status(500).json({ error: error }));
 };
 
 /* P6
@@ -64,85 +63,119 @@ exports.signup = (req, res, next) => {
 Fin du P6 */
 
 // CONNEXION
-exports.login = (req, res) => {
-  console.log('Connexion', req.body);
-  models.User
-    .findOne({ where:{ email: req.body.email } })
+exports.login = (req, res, next) => {
+  console.log('Connexion :', req.body);
+  User
+    .findOne({ where: { email: req.body.email } })
     .then((user) => {
-      if (!user) { return res.status(401).json({ error: 'Utilisateur non trouvé !' }); }
+      if (!user) { return res.status(404).json({ error: 'Utilisateur non trouvé' }) }
       bcrypt
         .compare(req.body.password, user.password)
         .then(valid => {
-          if (!valid) { return res.status(401).json({ error: 'Mot de passe incorrect !' }); }
+          if (!valid) { return res.status(401).json({ error: 'Mot de passe incorrect' }) }
           res.status(200).json({
-            userId: user.id,
-            admin: user.admin,
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            job: user.job,
+            url: user.url,
             token: jwt.sign(
-              { userId: user.id, admin: user.admin },
+              { id: user.id },
               process.env.RANDOM_SECRET_TOKEN,
               { expiresIn: '24h' }
             )
           });
+          console.log('Réponse:',res);
         })
         .catch(error => {
-          res.status(500).json({ error })
+          res.status(500).json({ error: 'Erreur API 1' })
         })
     })
-    .catch(error => res.status(500).json({ error }));
+    .catch(error => res.status(500).json({ error: 'Erreur API 2' }));
 };
 
 // INTERROGATION
 exports.getOneUser = (req, res) => {
   console.log('Interrogation', req.body);
-  models.User
+  User
     .findOne({ where: { id: req.params.id } })
     .then((user) => res.status(200).json((user)))
     .catch((error) => res.status(500).json({ error }))
 };
 
+// // MISE A JOUR
+// exports.updateUser = (req, res) => {
+//   const avatar = req.file;
+//   // On regarde si la requête contient une photo à modifier
+//   if (avatar) {
+//     console.log('MAJ du profil avec photo');
+//     console.log(req.file);
+//     User
+//       .findOne({ where: { id: req.params.id } })
+//       .then((res2) => {
+//         const filename = res2.url.split("/upload/")[1];
+//         fs.unlink(`upload/${filename}`, () => {
+//           User
+//             .update(
+//               {
+//                 // lastName: req.body.lastName,
+//                 // firstName: req.body.firstName,
+//                 // job: req.body.job,
+//                 url: `${req.protocol}://${req.get("host")}/upload/${ req.file.filename }`,
+//               },
+//               { where: { id: req.params.id } }
+//             )
+//             .then(() => res.status(200).json({ message: 'Image et profil modifiés' }))
+//             .catch((error) => res.status(400).json({ error }))
+//         });
+//       })
+//       .catch((error) => res.status(500).json({ error }));
+//   } else {
+//     console.log('MAJ du profil sans photo');
+//     User
+//       .update(
+//         { lastName: req.body.lastName, firstName: req.body.firstName, firstName, job: req.body.job },
+//         { where: { id: req.params.id } }
+//       )
+//       .then(() => res.status(201).json({ message: 'Profil modifié' }))
+//       .catch((error) => res.status(500).json({ error }))
+//   }
+// };
+
 // MISE A JOUR
 exports.updateUser = (req, res) => {
-  const avatar = req.file;
-  // On regarde si la requête contient une photo à modifier
-  if (avatar) {
-    models.User
-      .findOne({ where: { id: req.params.id } })
-      .then((res2) => {
-        const filename = res2.url.split("/upload/")[1];
-        fs.unlink(`upload/${filename}`, () => {
-          models.User
-            .update(
-              {
-                lastName: req.body.lastName,
-                firstName: req.body.firstName,
-                url: `${req.protocol}://${req.get("host")}/upload/${ req.file.filename }`,
-              },
-              { where: { id: req.params.id } }
-            )
-            .then(() => res.status(200).json({ message: 'Image et profil modifiés' }))
-            .catch((error) => res.status(400).json({ error }))
-        });
-      })
-      .catch((error) => res.status(500).json({ error }));
+  console.log('modification des données utilisateurs en cours');
+  var data = "";
+  let url = "";
+  console.log(req.file);
+
+  if(req.file) {
+      console.log('Circuit avec MAJ de la photo');
+      url = `${req.protocol}://${req.get('host')}/upload/${req.file.filename}`
+      data = { url: url }
   } else {
-    models.User
-      .update(
-        { lastName: req.body.lastName, firstName: req.body, firstName },
-        { where: { id: req.params.id } }
-      )
-      .then(() => res.status(201).json({ message: 'Profil modifié' }))
-      .catch((error) => res.status(500).json({ error }))
+      console.log('Circuit sans MAJ de la photo');
+      job = req.body.job
+      data = { job: job }
   }
+  console.log('MAJ du profil');
+  console.log(data);
+  User.update(data, {where: { id: req.params.id}})
+      .then(() => res.status(200).json({ message: 'Votre image de profil a été enregistrée !'}))
+      .catch((error) => {
+          console.log(error);
+          res.status(400).json({ 'error': 'Impossible d\'enregistrer l\'image de profil'})
+      })
 };
 
 // SUPPRESSION
 exports.deleteUser = (req, res) => {
-  models.User
+  User
     .findOne({ where: { id: req.params.id } })
     .then((user) => {
       const filename = user.url.split("/upload/")[1];
       fs.unlink(`upload/${filename}`, () => {
-        models.User
+        User
           .destroy({ where: { id: req.params.id } })
           .then(() => res.status(200).json({ message: 'Utilisateur supprimé' }))
           .catch((error) => res.status(400).json({ error }));

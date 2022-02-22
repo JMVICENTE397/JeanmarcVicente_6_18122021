@@ -1,16 +1,20 @@
 // IMPORTS
 require('dotenv').config();
 const express = require('express');
-const helmet = require('helmet');
+// const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
 const db = require('./models');
 const userRoutes = require('./routes/user');
-// const postRoutes = require('./routes/post');
+const postRoutes = require('./routes/post');
 const app = express();
 
-// CONNEXION A LA BASE DE DONNEES
+// SYNCHRONISATION DE LA BASE DE DONNEES
 // db.sequelize.sync({alter: true});
+
+// db.sync()
+//   .then(() => console.log('La connexion a la BDD a fonctionné.'))
+//   .catch(() => error => console.log('La connexion à la BDD a échoué.'))
 
 // https://sequelize.org/v7/manual/getting-started.html
 // Constructeur
@@ -63,14 +67,12 @@ dbConnectCheck();
 
 
 
-// db.sync()
-//   .then(() => console.log('La connexion a la BDD a fonctionné.'))
-//   .catch(() => error => console.log('La connexion à la BDD a échoué.'))
+
 
 // FONCTIONNALITES DU SERVEUR EXPRESS
 
   // Sécurisation des en-têtes htpp
-  app.use(helmet());
+  // app.use(helmet());
   app.use(cors());
 
   // Paramétrage des en-têtes
@@ -85,11 +87,11 @@ dbConnectCheck();
   app.use(express.json());
 
   // Pour la gestion des fichiers images
-  app.use('/images', express.static(path.join(__dirname, 'images')));
+  app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
   // Routes
   app.use('/api/auth', userRoutes);
-  // app.use('/api/post', postRoutes);
+  app.use('/api/post', postRoutes);
  
 
 // EXPORT

@@ -16,11 +16,12 @@ module.exports = (sequelize, DataTypes) => {
       password: { type: DataTypes.STRING(255), allowNull: false }, // Hash
       lastName: { type: DataTypes.STRING(60), allowNull: false },
       firstName: { type: DataTypes.STRING(60), allowNull: false },
-      url: { type: DataTypes.STRING(255), allowNull: true },
+      job: { type: DataTypes.STRING(100), allowNull: true },
+      url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: "../upload/Sample_User_Icon.png" },
       admin: { type: DataTypes.BOOLEAN, defaultValue:false },
       active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      // createdAt: { type: DataTypes.DATE },
-      // updatedAt: { type: DataTypes.DATE }
+      // createdAt: { type: DataTypes.DATE }, // Champ créé automatiquement dans MySQL
+      // updatedAt: { type: DataTypes.DATE }, // Champ créé automatiquement dans MySQL
     },
     { // Options
       sequelize,
