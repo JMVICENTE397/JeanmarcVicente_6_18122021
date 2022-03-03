@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       lastName: { type: DataTypes.STRING(60), allowNull: false },
       firstName: { type: DataTypes.STRING(60), allowNull: false },
       job: { type: DataTypes.STRING(100), allowNull: true },
-      url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: "../upload/Sample_User_Icon.png" },
+      url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
       admin: { type: DataTypes.BOOLEAN, defaultValue:false },
       active: { type: DataTypes.BOOLEAN, defaultValue: true },
       // createdAt: { type: DataTypes.DATE }, // Champ créé automatiquement dans MySQL

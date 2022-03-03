@@ -21,54 +21,44 @@ exports.createPost = (req, res) => {
     .catch((error) => res.status(400).json({ error }));
 };
 
-// CREER OU SUPPRIMER UN LIKE OU UN DISLIKE
-// exports.likeSauce = (req, res, next) => {
-//   if (req.body.like === 1) {  // J'aime
-//       Sauce.updateOne( {_id:req.params.id}, { $push: { usersLiked: req.body.userId }, $inc: { likes: +1 } })
-//         .then(() => res.status(200).json({ message: 'Like ajouté !'}))
-//         .catch(error => res.status(400).json({ error }));
-//   } else if (req.body.like === -1) {  // Je n'aime pas
-//       Sauce.updateOne( {_id:req.params.id}, { $push: { usersDisliked: req.body.userId }, $inc: { dislikes: +1 } })
-//         .then(() => res.status(200).json({ message: 'Dislike ajouté !'}))
-//         .catch(error => res.status(400).json({ error }));
-//   } else {  // Je n'ai plus d'avis
-//       Sauce.findOne({ _id: req.params.id })
-//         .then(sauce => {
-//           if (sauce.usersLiked.includes(req.body.userId)) {
-//             Sauce.updateOne( {_id:req.params.id}, { $pull: { usersLiked: req.body.userId }, $inc: { likes: -1 } })
-//               .then(() => res.status(200).json({ message: 'Like supprimé !'}))
-//               .catch(error => res.status(400).json({ error }))
-//           } else if (sauce.usersDisliked.includes(req.body.userId)) {
-//             Sauce.updateOne( {_id:req.params.id}, { $pull: { usersDisliked: req.body.userId }, $inc: { dislikes: -1 } })
-//               .then(() => res.status(200).json({ message: 'Dislike supprimé !'}))
-//               .catch(error => res.status(400).json({ error }))
-//           }
-//         })
-//         .catch(error => res.status(400).json({ error }));
-//   }
-// };
+// MODIFIER UN POST
+exports.updatePost = (req, res) => {
+  console.log('Requête MAJ de post : ', req.body);
+  let media = null;
+  if (req.file) { media = `${req.protocol}://${req.get("host")}/upload/${req.file.filename}` };
+    const data = {
+    UserId: req.body.UserId,
+    title: req.body.title,
+    content: req.body.content,
+    url: media,
+  }
+  Post
+    .update(data, {where: { id: req.params.id}})
+    .then(() => res.status(201).json({ message: "Post créé" }))
+    .catch((error) => res.status(400).json({ error }));
+};
 
-// INTERROGER TOUS LES POSTS
+// LIRE TOUS LES POSTS
 exports.getAllPosts = (req, res) => {
   Post
     .findAll({
-
-      // where:{ _id: req.params.id },
       include: [
-        {
-          model: User,
-          attributes: ["id", "firstName", "lastName", "url"],
+          {
+            model: User,
+            required: true,
+            attributes: ['firstName', 'lastName', 'url', 'id']
         },
-        
-        // {model: Comment},
-        // {model: Like}
+        {
+            model: Comment,
+            required: false,
+            include: {
+                model: User,
+                required: true,
+                attributes: ['firstName', 'lastName', 'url', 'id']
+            },
+        }
       ],
-              // Will order by a nested associated model's createdAt simple association objects.
-    // [{model: Task, as: 'Task'}, {model: Project, as: 'Project'}, 'createdAt', 'DESC']
-    order: [
-      // [User,'id', 'DESC']
-      ['id', 'DESC']
-    ],
+      order: [['createdAt', 'DESC']],
     })
     .then(console.log(JSON.stringify(res.body)))
     .then((post) => res.status(200).json(post))
@@ -77,29 +67,17 @@ exports.getAllPosts = (req, res) => {
 
 // INTERROGER UN POST
 exports.getOnePost = (req, res) => {
-  Post.findAll({
-      where:{ _id: req.params.id },
+  console.log('Contenu de la requête getOnePost : ', req.body);
+  Post
+    .findOne({
+      where: { id: req.params.id },
       // include: [
       //   {model: User},
-      //   {model: Comment},
-      //   {model: Like}
       // ]
     })
     .then((post) => res.status(200).json(post))
     .catch(error => res.status(404).json({ error }));
 };
-
-// // MODIFIER UNE SAUCE
-// exports.modifySauce = (req, res, next) => {
-//   const sauceObject = req.file ?
-//     {
-//       ...JSON.parse(req.body.sauce),
-//       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-//     } : { ...req.body };
-//   Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-//     .then(() => res.status(200).json({ message: 'Objet modifié !'}))
-//     .catch(error => res.status(400).json({ error }));
-// };
 
 // EFFACER UN POST
 exports.deletePost = (req, res) => { Post
@@ -107,3 +85,66 @@ exports.deletePost = (req, res) => { Post
   .then(() => res.status(200).json({ message: "Post supprimé" }))
   .catch((error) => res.status(400).json({ error }));
   };
+
+// CREER UN COMMENTAIRE
+exports.createComment = (req, res) => {
+  if (!req.body.comment) { return res.status(400).json({ message: 'Commentaire vide'}) }
+  console.log("Contenu de la requête :", req.body)
+  Comment
+    .create ({
+      PostId: req.body.PostId,  
+      UserId: req.body.UserId,
+      comment: req.body.comment
+    })
+    .then(() => res.status(201).json({ message: "Commentaire créé" }))
+    .catch((error) => res.status(400).json({ error: "Commentaire non créé" }));
+};
+
+// METTRE A JOUR UN COMMENTAIRE
+exports.updateOneComment = (req, res) => {
+  if (!req.body.comment) { return res.status(400).json({ message: 'Commentaire vide'}) }
+  const CommentId = req.params.id
+  console.log("Numéro du commentaire :", CommentId)
+  console.log("Contenu de la requête de MAJ :", req.body)
+  const data = {
+    UserId: req.body.UserId,
+    PostId: req.body.PostId,
+    comment: req.body.comment,
+  }
+  Comment
+    .update(data, {where: { id: req.params.id}})
+    .then(() => res.status(201).json({ message: "Commentaire modifié" }))
+    .catch((error) => res.status(400).json({ error: "Commentaire non modifié" }));
+};
+
+// EFFACER UN COMMENTAIRE
+exports.deleteComment = (req, res) => {
+  console.log('Vous allez supprimer le commentaire')
+  Comment.destroy({ where: { id: req.params.id}})
+      .then(() => res.status(200).json({ message: 'commentaire supprimé'}))
+      .catch(err => res.status(400).json({ err: 'Impossible de supprimer le commentaire'}))
+};
+
+// LIRE LES COMMENTAIRES
+exports.getAllComments = (req, res) => {
+  Comment
+    .findAll({
+      where: { postId: req.params.id},
+      include: {
+          model: User,
+          required: true,
+          attributes: ['firstname', 'name']
+      },
+    })
+    .then((comments) => { res.status(200).json(comments) })
+    .catch(err => res.status(400).json({ err: 'impossible d\'afficher les commentaires'}))
+};
+
+// LIRE UN COMMENTAIRE
+exports.getOneComment = (req, res) => {
+  console.log('Interrogation', req.body);
+  Comment
+    .findOne({ where: { id: req.params.id} })
+    .then((comments) => { res.status(200).json(comments) })
+    .catch(err => res.status(400).json({ err: 'impossible d\'afficher les commentaires'}))
+};

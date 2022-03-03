@@ -1,7 +1,7 @@
 // IMPORTS
 require('dotenv').config();
 const express = require('express');
-// const helmet = require('helmet');
+const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
 const db = require('./models');
@@ -72,7 +72,7 @@ dbConnectCheck();
 // FONCTIONNALITES DU SERVEUR EXPRESS
 
   // Sécurisation des en-têtes htpp
-  // app.use(helmet());
+  app.use(helmet());
   app.use(cors());
 
   // Paramétrage des en-têtes
@@ -93,6 +93,5 @@ dbConnectCheck();
   app.use('/api/auth', userRoutes);
   app.use('/api/post', postRoutes);
  
-
 // EXPORT
 module.exports = app;
