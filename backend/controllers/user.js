@@ -1,6 +1,7 @@
 // IMPORTS
 require('dotenv').config();
 const bcrypt = require('bcrypt');
+const maskData = require('maskdata');
 const joi = require('../middleware/joi');
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
@@ -18,6 +19,14 @@ exports.signup = (req, res) => {
       const resultJoi = joi.validate(req.body);
       console.log(resultJoi);
       if (!resultJoi.error) { // Si aucune erreur de format avec joi
+        // console.log('Avant masquage');
+        // const maskStringOptions = {
+        //   maskWith: "*", 
+        //   maskAll: true
+        // };
+        // console.log('Avant masquage 2');
+        // const maskedLastName = maskData.maskString(req.body.lastName,maskStringOptions);
+        // console.log(maskedLastName);
         bcrypt
           .hash(req.body.password, 10)
           .then((hash) => {
@@ -103,45 +112,6 @@ exports.getOneUser = (req, res) => {
     .then((user) => res.status(200).json((user)))
     .catch((error) => res.status(500).json({ error }))
 };
-
-// // MISE A JOUR
-// exports.updateUser = (req, res) => {
-//   const avatar = req.file;
-//   // On regarde si la requête contient une photo à modifier
-//   if (avatar) {
-//     console.log('MAJ du profil avec photo');
-//     console.log(req.file);
-//     User
-//       .findOne({ where: { id: req.params.id } })
-//       .then((res2) => {
-//         const filename = res2.url.split("/upload/")[1];
-//         fs.unlink(`upload/${filename}`, () => {
-//           User
-//             .update(
-//               {
-//                 // lastName: req.body.lastName,
-//                 // firstName: req.body.firstName,
-//                 // job: req.body.job,
-//                 url: `${req.protocol}://${req.get("host")}/upload/${ req.file.filename }`,
-//               },
-//               { where: { id: req.params.id } }
-//             )
-//             .then(() => res.status(200).json({ message: 'Image et profil modifiés' }))
-//             .catch((error) => res.status(400).json({ error }))
-//         });
-//       })
-//       .catch((error) => res.status(500).json({ error }));
-//   } else {
-//     console.log('MAJ du profil sans photo');
-//     User
-//       .update(
-//         { lastName: req.body.lastName, firstName: req.body.firstName, firstName, job: req.body.job },
-//         { where: { id: req.params.id } }
-//       )
-//       .then(() => res.status(201).json({ message: 'Profil modifié' }))
-//       .catch((error) => res.status(500).json({ error }))
-//   }
-// };
 
 // MISE A JOUR
 exports.updateUser = (req, res) => {
